@@ -30,27 +30,99 @@ let firstForm = document.forms.firstForm;
 let secondForm = document.forms.secondForm;
 
 generateForm(firstForm, formDef1);
+generateForm(secondForm, formDef2);
 
 function generateForm(form, elements){
     console.log(form);
 
-    let elementsCopy = JSON.parse(JSON.stringify(elements));;
+    let elementsCopy = JSON.parse(JSON.stringify(elements));
 
     elementsCopy.forEach(element => {
-      let labelChildElement = document.createElement('label');
-      labelChildElement.innerHTML = element.label;
-      delete element.label;
-      form.appendChild(labelChildElement);
-
-      let childElement = document.createElement('input'); 
-
-      for (let key in element){
-        childElement.setAttribute(key, element[key]);
+      if('label' in element){
+        let labelChildElement = document.createElement('label');
+        labelChildElement.innerHTML = element.label;
+        delete element.label;
+        form.appendChild(labelChildElement);
       }
+
+      let childElement = generateChildElement(element); 
 
       form.appendChild(childElement)
 
       let brChildElement = document.createElement('br');
       form.appendChild(brChildElement);
     });
+}
+
+function generateChildElement(element){
+    switch (element.kind){
+        case 'submit':
+            return generateButton(element, 'button');
+        case 'combo':
+            return generateSelect(element, 'select');
+        case 'radio':
+            return generateRadio(element, 'input');
+        default:
+            return generateInput(element, 'input');
+    }
+}
+
+function generateButton(element, kind){
+    let childElement = document.createElement(kind);    
+    delete element.kind;
+
+    childElement.innerHTML = element.caption;
+    delete element.caption;
+
+    for (let key in element){
+        childElement.setAttribute(key, element[key]);
+    }
+
+    return childElement;
+}
+
+function generateSelect(element, kind){
+    let childElement = document.createElement(kind);
+    delete element.kind;
+
+    element.variants.forEach(variant => {
+        let optionElement = document.createElement('option');
+        optionElement.innerHTML = variant.text;
+        optionElement.setAttribute('value', variant.value);
+        childElement.appendChild(optionElement);
+    });
+
+    return childElement;
+}
+
+function generateRadio(element, kind){
+    delete element.kind;
+
+    let fieldsetElement = document.createElement('fieldset');
+
+    element.variants.forEach(e => {
+        let childElement = document.createElement(kind);
+        childElement.setAttribute('type', 'radio');
+        childElement.setAttribute('value', e.value);
+        childElement.setAttribute('id', e.value);
+        childElement.setAttribute('name', element.name)
+        fieldsetElement.appendChild(childElement);
+
+        let inputChildElement = document.createElement('label');
+        inputChildElement.innerHTML = e.text;
+        fieldsetElement.appendChild(inputChildElement);
+    });
+
+    return fieldsetElement;
+}
+
+function generateInput(element, kind){
+    let childElement = document.createElement(kind);
+    delete element.kind;
+
+    for (let key in element){
+        childElement.setAttribute(key, element[key]);
+    }
+    
+    return childElement;
 }
